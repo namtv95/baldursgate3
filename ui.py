@@ -1,5 +1,20 @@
+from configparser import ConfigParser
 import re
-from tkinter import BOTH, END, LEFT, RIGHT, VERTICAL, Y, Frame, IntVar, Label, Scrollbar, Tk, filedialog, messagebox
+from tkinter import (
+    BOTH,
+    END,
+    LEFT,
+    RIGHT,
+    VERTICAL,
+    Y,
+    Frame,
+    IntVar,
+    Label,
+    Scrollbar,
+    Tk,
+    filedialog,
+    messagebox,
+)
 from tkinter.ttk import Checkbutton, Style, Treeview, Button, Entry
 from xml.etree import ElementTree as ET
 
@@ -52,7 +67,7 @@ def on_edit(event):
 
         # Put cell into edit mode
         column_box = table.bbox(cell, "#3")
-        entry_edit = Entry(table, width=column_box[2], font=('Calibri', 11))
+        entry_edit = Entry(table, width=column_box[2], font=("Calibri", 11))
 
         # Record item iid
         entry_edit.editing_item_iid = cell
@@ -69,7 +84,8 @@ def on_edit(event):
 
         # add edit box
         entry_edit.place(
-            x=column_box[0], y=column_box[1], w=column_box[2], h=column_box[3])
+            x=column_box[0], y=column_box[1], w=column_box[2], h=column_box[3]
+        )
 
         # add event on edit
         entry_edit.bind("<FocusOut>", on_focus_out)
@@ -90,17 +106,38 @@ def load_data():
         base_root = base_tree.getroot()
         for elem in xml_root:
             base_elem = base_root[idx]
-            if elem.get('contentuid') != base_elem.get('contentuid'):
-                messagebox.showerror("Error", "Cannot mapping dataset. There are different in two file.")
+            if elem.get("contentuid") != base_elem.get("contentuid"):
+                messagebox.showerror(
+                    "Error", "Cannot mapping dataset. There are different in two file."
+                )
                 break
             tags = []
             if elem.text != base_elem.text:
-                tags = ['diff']
-            table.insert('', 'end', text=idx + 1, tags=tags, values=(
-                elem.get('contentuid'), elem.get('version'), elem.text, base_root[idx].text))
+                tags = ["diff"]
+            table.insert(
+                "",
+                "end",
+                text=idx + 1,
+                tags=tags,
+                values=(
+                    elem.get("contentuid"),
+                    elem.get("version"),
+                    elem.text,
+                    base_root[idx].text,
+                ),
+            )
             idx += 1
+        config = ConfigParser()
+        config["DEFAULT"] = {
+            "base_path": base_file_entry.get(),
+            "trans_path": trans_file_entry.get(),
+        }
+        with open("config.ini", "w") as configfile:
+            config.write(configfile)
     else:
-        messagebox.showwarning("Select File", "Please select both base and translation files.")
+        messagebox.showwarning(
+            "Select File", "Please select both base and translation files."
+        )
 
 
 def init_table():
@@ -111,16 +148,21 @@ def init_table():
 
     # Style
     style = Style()
-    style.configure("Treeview",
-                    background="#fff", foreground="#333", font=('Calibri', 11), borderwidth=2, relief="groove", rowheight=25)
-    style.configure("Treeview.Heading",
-                    font=('Calibri', 12, 'bold')),
+    style.configure(
+        "Treeview",
+        background="#fff",
+        foreground="#333",
+        font=("Calibri", 11),
+        borderwidth=2,
+        relief="groove",
+        rowheight=25,
+    )
+    style.configure("Treeview.Heading", font=("Calibri", 12, "bold")),
 
     # Create table and scrollbar
-    columns = ('content_id', 'version', 'content', 'origin')
+    columns = ("content_id", "version", "content", "origin")
     table = Treeview(table_frame, columns=columns, height=30)
-    scrollbar = Scrollbar(
-        table_frame, orient=VERTICAL, command=table.yview)
+    scrollbar = Scrollbar(table_frame, orient=VERTICAL, command=table.yview)
     table.config(yscrollcommand=scrollbar.set)
     table.pack(side=LEFT, fill=BOTH, expand=True)
     scrollbar.pack(side=RIGHT, fill=Y)
@@ -131,25 +173,26 @@ def init_table():
     table.tag_configure("diff", background="#EBECFF")
 
     # Load columns
-    table.heading('#0', text='No.')
-    table.column('#0', stretch=False, width=50)
-    table.heading('content_id', text='Content ID')
-    table.column('content_id', stretch=False, width=250)
-    table.heading('version', text='Version')
-    table.column('version', stretch=False, width=70)
-    table.heading('content', text='Content')
-    table.column('content', width=700)
-    table.heading('origin', text='Origin')
-    table.column('origin', width=300)
+    table.heading("#0", text="No.")
+    table.column("#0", stretch=False, width=50)
+    table.heading("content_id", text="Content ID")
+    table.column("content_id", stretch=False, width=250)
+    table.heading("version", text="Version")
+    table.column("version", stretch=False, width=70)
+    table.heading("content", text="Content")
+    table.column("content", width=700)
+    table.heading("origin", text="Origin")
+    table.column("origin", width=300)
 
     # Binding edit cell
-    table.bind('<Double-1>', on_edit)
+    table.bind("<Double-1>", on_edit)
 
 
 def select_file(file_entry):
     def wrapper():
         filename = filedialog.askopenfilename(filetypes=[("XML file", ".xml")])
         file_entry.insert(0, filename)
+
     return wrapper
 
 
@@ -172,7 +215,7 @@ def get_matches(search_input, take_index):
 
     index = 0
     for item in table.get_children():
-        values = table.item(item)['values']
+        values = table.item(item)["values"]
 
         if match_reg.get() == 0:
             if match_case.get() == 0:
@@ -183,7 +226,11 @@ def get_matches(search_input, take_index):
                 if index == take_index:
                     return item
                 index += 1
-        elif re.search(search_text, str(values[0])) or re.search(search_text, str(values[2])) or re.search(search_text, str(values[3])):
+        elif (
+            re.search(search_text, str(values[0]))
+            or re.search(search_text, str(values[2]))
+            or re.search(search_text, str(values[3]))
+        ):
             if index == take_index:
                 return item
             index += 1
@@ -238,7 +285,13 @@ def init_action_button():
     base_file_entry = Entry(file_frame)
     base_file_entry.pack(side=LEFT, fill=BOTH, expand=1, padx=(10, 0), pady=10)
     # Browse button
-    file_button = Button(file_frame, width=10, style="TButton", text="Browse...", command=select_file(base_file_entry))
+    file_button = Button(
+        file_frame,
+        width=10,
+        style="TButton",
+        text="Browse...",
+        command=select_file(base_file_entry),
+    )
     file_button.pack(side=LEFT, padx=10, pady=10)
 
     # Input file path
@@ -247,15 +300,25 @@ def init_action_button():
     trans_file_entry = Entry(file_frame)
     trans_file_entry.pack(side=LEFT, fill=BOTH, expand=1, padx=(10, 0), pady=10)
     # Browse button
-    file_button = Button(file_frame, width=10, style="TButton", text="Browse...", command=select_file(trans_file_entry))
+    file_button = Button(
+        file_frame,
+        width=10,
+        style="TButton",
+        text="Browse...",
+        command=select_file(trans_file_entry),
+    )
     file_button.pack(side=LEFT, padx=(10, 50), pady=10)
 
     # Load button
-    save_button = Button(file_frame, width=10, text="Load", style="TButton", command=load_data)
+    save_button = Button(
+        file_frame, width=10, text="Load", style="TButton", command=load_data
+    )
     save_button.pack(side=LEFT, padx=(0, 10), pady=10)
 
     # Save button
-    save_button = Button(file_frame, width=10, text="Save", style="TButton", command=save_file)
+    save_button = Button(
+        file_frame, width=10, text="Save", style="TButton", command=save_file
+    )
     save_button.pack(side=RIGHT, padx=(0, 20), pady=10)
 
 
@@ -270,14 +333,16 @@ def init_search():
     search_input.pack(side=LEFT, fill=BOTH, expand=1, padx=(10, 20), pady=(10, 0))
     search_input.bind("<Return>", on_search_next)
 
-    match_case_input = Checkbutton(search_frame, text='Match case', variable=match_case)
+    match_case_input = Checkbutton(search_frame, text="Match case", variable=match_case)
     match_case_input.pack(side=LEFT, padx=(0, 10), pady=(10, 0))
 
-    match_reg_input = Checkbutton(search_frame, text='Regex', variable=match_reg)
+    match_reg_input = Checkbutton(search_frame, text="Regex", variable=match_reg)
     match_reg_input.pack(side=LEFT, pady=(10, 0))
 
     # Save button
-    save_button = Button(search_frame, width=10, text="Search", style="TButton", command=on_search)
+    save_button = Button(
+        search_frame, width=10, text="Search", style="TButton", command=on_search
+    )
     save_button.pack(side=RIGHT, padx=(10, 20), pady=(10, 0))
 
 
@@ -287,13 +352,25 @@ def init_layout():
     init_table()
 
 
+def load_config():
+    config = ConfigParser()
+    config.sections()
+    config.read("config.ini")
+    data = config["DEFAULT"]
+    if data["base_path"]:
+        base_file_entry.insert(0, str(data["base_path"]))
+    if data["trans_path"]:
+        trans_file_entry.insert(0, str(data["trans_path"]))
+
+
 if __name__ == "__main__":
     # Create Tk window
     window = Tk()
     window.iconbitmap("icon.ico")
     match_case = IntVar()
     match_reg = IntVar()
-    window.title('Baldur\'s gate 3 Localization')
+    window.title("Baldur's gate 3 Localization")
     init_layout()
+    load_config()
 
     window.mainloop()
