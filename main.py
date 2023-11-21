@@ -359,7 +359,7 @@ def init_trans_area():
     edit_frame = Frame(window)
     edit_frame.pack(fill=BOTH, pady=(0, 5))
 
-    trans_input = ScrolledText(edit_frame, height=5)
+    trans_input = ScrolledText(edit_frame, height=5, undo=True)
     trans_input.pack(side=LEFT, fill=BOTH, expand=1, pady=(10, 0))
     trans_input.configure(wrap="word")
 
