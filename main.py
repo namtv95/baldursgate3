@@ -163,8 +163,8 @@ def save_file():
         messagebox.showerror("Error", "File not found.")
 
 
-def get_matches(search_input, take_index):
-    global match_case, match_reg
+def get_matches(search_input):
+    global match_case, match_reg, match_index
     search_text = search_input
     if len(search_input) == 0:
         return []
@@ -172,8 +172,10 @@ def get_matches(search_input, take_index):
     if match_case.get() == 0 and match_reg.get() == 0:
         search_text = search_text.lower()
 
-    index = 0
-    for item in table.get_children():
+    data = table.get_children()
+    length = len(data)
+    for index in range(match_index, length):
+        item = data[index]
         values = table.item(item)["values"]
 
         if match_reg.get() == 0:
@@ -182,29 +184,32 @@ def get_matches(search_input, take_index):
             else:
                 values = str(values)
             if search_text in values:
-                if index == take_index:
-                    return item
-                index += 1
+                if index < length - 1:
+                    match_index = index + 1
+                else:
+                    match_index = 0
+                return item
         elif (
                 re.search(search_text, str(values[0]))
                 or re.search(search_text, str(values[2]))
                 or re.search(search_text, str(values[3]))
         ):
-            if index == take_index:
-                return item
-            index += 1
-
+            if index < length - 1:
+                match_index = index + 1
+            else:
+                match_index = 0
+            return item
+    match_index = 0
     return None
 
 
 def on_search_next(event):
     global match_index, previous_match_id
-    match_index += 1
 
     if previous_match_id is not None:
         table.item(previous_match_id, tags=("",))
 
-    result = get_matches(search_input.get(), match_index)
+    result = get_matches(search_input.get())
 
     if result:
         previous_match_id = result
@@ -213,14 +218,13 @@ def on_search_next(event):
         table.item(result, tags=("searched",))
     else:
         messagebox.showwarning("Search", "No matching data found.")
-        match_index = 0
 
 
 def on_search():
     global table, search_input, match_index, previous_match_id
     match_index = 0
     previous_match_id = None
-    result = get_matches(search_input.get(), match_index)
+    result = get_matches(search_input.get())
 
     if result:
         previous_match_id = result
