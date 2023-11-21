@@ -1,5 +1,5 @@
-from configparser import ConfigParser
 import re
+from configparser import ConfigParser
 from tkinter import (
     BOTH,
     END,
@@ -22,8 +22,9 @@ from tkinter.ttk import Checkbutton, Style, Treeview, Button, Entry
 from xml.etree import ElementTree as ET
 
 import pyperclip
-import globals
+
 from sort import open_sort_dialog
+import globals
 
 
 def on_submit_edit():
@@ -181,9 +182,9 @@ def get_matches(search_input, take_index):
                     return item
                 index += 1
         elif (
-            re.search(search_text, str(values[0]))
-            or re.search(search_text, str(values[2]))
-            or re.search(search_text, str(values[3]))
+                re.search(search_text, str(values[0]))
+                or re.search(search_text, str(values[2]))
+                or re.search(search_text, str(values[3]))
         ):
             if index == take_index:
                 return item
