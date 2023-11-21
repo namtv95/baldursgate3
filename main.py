@@ -90,11 +90,10 @@ def load_data():
         table.delete(*table.get_children())
 
     if base_file_entry.get() and trans_file_entry.get():
-        base_idx = 0
-        tran_idx = 0
+        idx = 0
         try:
-            trans_tree = ET.parse(trans_file_entry.get())
-            trans_root = trans_tree.getroot()
+            xml_tree = ET.parse(trans_file_entry.get())
+            xml_root = xml_tree.getroot()
 
             base_tree = ET.parse(base_file_entry.get())
             base_root = base_tree.getroot()
@@ -105,12 +104,13 @@ def load_data():
             return None
 
         for elem in base_root:
-            trans_elem = trans_root[tran_idx]
+            trans_elem = xml_root[idx]
             trans_text = trans_elem.text
             if elem.get("contentuid") != trans_elem.get("contentuid"):
-                trans_text = 'NONE'
-            else:
-                tran_idx += 1
+                xml_root.insert(idx, elem)
+                trans_elem = elem
+                trans_text = elem.text
+
             tags = []
             if elem.text != trans_elem.text:
                 tags = ["diff"]
@@ -118,7 +118,7 @@ def load_data():
             table.insert(
                 "",
                 "end",
-                text=base_idx + 1,
+                text=idx + 1,
                 tags=tags,
                 values=(
                     elem.get("contentuid"),
@@ -127,7 +127,7 @@ def load_data():
                     elem.text,
                 ),
             )
-            base_idx += 1
+            idx += 1
         config = ConfigParser()
         config["DEFAULT"] = {
             "base_path": base_file_entry.get(),
@@ -153,10 +153,14 @@ def select_file(file_entry):
 def save_file():
     global xml_tree
     if xml_tree:
-        xml_tree.write(
-            f"result/trans_editor_result.xml", encoding="utf-8", xml_declaration=True
-        )
-        messagebox.showinfo("Save File", "File saved successfully.")
+        output_file = filedialog.asksaveasfilename(defaultextension="xml", filetypes=[("XML file", ".xml")])
+        if output_file:
+            xml_tree.write(
+                output_file, encoding="utf-8", xml_declaration=True
+            )
+            messagebox.showinfo("Save File", "File saved successfully.")
+    else:
+        messagebox.showerror("Error", "File not found.")
 
 
 def get_matches(search_input, take_index):

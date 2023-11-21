@@ -52,7 +52,7 @@ def open_sort_dialog():
 
 def sort_xml_by_attribute():
     global dialog
-    output_file = filedialog.asksaveasfilename(filetypes=[("XML file", ".xml")])
+    output_file = filedialog.asksaveasfilename(defaultextension="xml", filetypes=[("XML file", ".xml")])
     if not output_file:
         return None
 
