@@ -1,6 +1,64 @@
+from tkinter import BOTH, LEFT, RIGHT, X, Entry, Frame, Label, Tk, Toplevel, filedialog, messagebox
+from tkinter.ttk import Button
 import xml.etree.ElementTree as ET
+import globals
 
-def sort_xml_by_attribute(xml_file, output_file, attribute_name='contentuid'):
+dialog = None
+filename = None
+
+
+def get_file():
+    global filename
+    filepath = filedialog.askopenfilename(filetypes=[("XML file", ".xml")])
+    if filepath:
+        filename.delete(0, 'end')
+        filename.insert(0, filepath)
+
+
+def open_sort_dialog():
+    global dialog, filename
+
+    # Open dialog
+    dialog = Toplevel()
+    width = 500
+    height = 30
+    screen_width = dialog.master.winfo_screenwidth()
+    screen_height = dialog.master.winfo_screenheight()
+    x = (screen_width/2) - (width/2)
+    y = (screen_height/2) - (height/2)
+    dialog.geometry("%dx%d+%d+%d" % (width, height, x, y))
+    dialog.transient(globals.window)
+    dialog.grab_set()
+
+    # Add UI elements
+    file_frame = Frame(dialog)
+    file_frame.pack(fill=BOTH)
+
+    label = Label(file_frame, text="File:", padx=10)
+    label.pack(side=LEFT)
+
+    filename = Entry(file_frame)
+    filename.pack(side=LEFT, fill=X, expand=1, padx=(10, 0))
+
+    open_button = Button(file_frame, text="Browse", style="TButton", command=get_file)
+    open_button.pack(side=LEFT, padx=(10, 0))
+
+    sort_button = Button(file_frame, text="Sort", style="TButton", command=sort_xml_by_attribute)
+    sort_button.pack(side=RIGHT, padx=10)
+
+    # Block code execution until window is closed
+    dialog.wait_window()
+
+
+def sort_xml_by_attribute():
+    global dialog
+    output_file = filedialog.asksaveasfilename(filetypes=[("XML file", ".xml")])
+    if not output_file:
+        return None
+
+    attribute_name = 'contentuid'
+    xml_file = filename.get()
+
     # Parse the XML file
     tree = ET.parse(xml_file)
     root = tree.getroot()
@@ -8,11 +66,13 @@ def sort_xml_by_attribute(xml_file, output_file, attribute_name='contentuid'):
     # Sort the content elements by the specified attribute
     sorted_content = sorted(root, key=lambda x: (x.tag, x.get(attribute_name)))
 
-    tree_sort = ET.parse(output_file)
-    root_sort = tree_sort.getroot()
-
+    sort_root = ET.Element("contentList")
     for child in sorted_content:
-        root_sort.append(child)
+        sort_root.append(child)
+
+    sort_tree = ET.ElementTree(sort_root)
 
     # Write the sorted XML to the output file
-    tree_sort.write(output_file, encoding='utf-8', xml_declaration=True)
+    sort_tree.write(output_file, encoding='utf-8', xml_declaration=True)
+    dialog.destroy()
+    messagebox.showinfo("Sort File", "Sort file successfully.")

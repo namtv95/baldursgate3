@@ -3,9 +3,11 @@ import re
 from tkinter import (
     BOTH,
     END,
+    INSERT,
     LEFT,
     RIGHT,
     VERTICAL,
+    X,
     Y,
     Frame,
     IntVar,
@@ -13,96 +15,72 @@ from tkinter import (
     Scrollbar,
     Tk,
     filedialog,
-    messagebox,
+    messagebox
 )
+from tkinter.scrolledtext import ScrolledText
 from tkinter.ttk import Checkbutton, Style, Treeview, Button, Entry
 from xml.etree import ElementTree as ET
 
 import pyperclip
-
-table = None
-window = None
-base_file_entry = None
-trans_file_entry = None
-xml_root = None
-xml_tree = None
-
-# search input
-search_input = None
-match_case = None
-match_reg = None
-match_index = 0
-previous_match_id = None
+import globals
+from sort import open_sort_dialog
 
 
-def on_focus_out(event):
-    event.widget.destroy()
+def on_submit_edit():
+    global table, xml_root, trans_input
+    selected_iid = trans_input.editing_item_iid
+    selected_index = trans_input.editing_item_index
 
-
-def on_submit_edit(event):
-    global table, xml_root
-    new_text = event.widget.get()
-    selected_iid = event.widget.editing_item_iid
-    selected_index = event.widget.editing_item_index
-
+    input_value = trans_input.get('1.0', END).strip()
     current_values = table.item(selected_iid).get("values")
-    current_values[2] = new_text
 
-    xml_root[selected_index].text = new_text
+    current_values[2] = input_value
+    xml_root[selected_index].text = input_value
     table.item(selected_iid, values=current_values, tags=("edited",))
 
     table.selection_remove(selected_iid)
     table.focus(None)
 
-    event.widget.destroy()
+
+def on_revert_edit():
+    global table, xml_root, trans_input
+    selected_iid = trans_input.editing_item_iid
+    current_values = table.item(selected_iid).get("values")
+
+    trans_input.delete('1.0', END)
+    trans_input.insert(INSERT, current_values[2])
 
 
 def on_edit(event):
-    global table
+    global table, trans_input
     cell = table.identify_row(event.y)
     column = table.identify_column(event.x)
     if not cell:
         return
-    if column == "#3":
-        # Select and focus on single click
-        table.selection_set(cell)
-        table.focus(cell)
+    # Select and focus on single click
+    table.selection_set(cell)
+    table.focus(cell)
 
-        # Put cell into edit mode
-        column_box = table.bbox(cell, "#3")
-        entry_edit = Entry(table, width=column_box[2], font=("Calibri", 11))
+    # Record item iid
+    trans_input.editing_item_iid = cell
+    trans_input.editing_item_index = int(table.index(cell))
 
-        # Record item iid
-        entry_edit.editing_item_iid = cell
-        entry_edit.editing_item_index = int(table.index(cell))
+    # Get select value
+    selected = table.selection()[0]
+    values = table.item(selected, "values")
 
-        # Get select value
-        selected = table.selection()[0]
-        values = table.item(selected, "values")
+    trans_input.delete('1.0', END)
+    trans_input.insert(INSERT, values[2])
 
-        entry_edit.insert(0, values[2])
-        # select text in cell
-        entry_edit.select_range(0, END)
-        entry_edit.focus()
+    base_input.configure(state='normal')
+    base_input.delete('1.0', END)
+    base_input.insert(INSERT, values[3])
+    base_input.configure(state='disabled')
 
-        # add edit box
-        entry_edit.place(
-            x=column_box[0], y=column_box[1], w=column_box[2], h=column_box[3]
-        )
-
-        # add event on edit
-        entry_edit.bind("<FocusOut>", on_focus_out)
-        entry_edit.bind("<Return>", on_submit_edit)
-    elif column == "#1" or column == '#4':
-        # Get select value
-        selected = table.selection()[0]
-        values = table.item(selected, "values")
-        if column == '#1':
-            pyperclip.copy(values[0])
-        else:
-            pyperclip.copy(values[3])
-
-
+    if column == "#1":
+        pyperclip.copy(values[0])
+    elif column == '#4':
+        pyperclip.copy(values[3])
 
 
 def load_data():
@@ -111,35 +89,44 @@ def load_data():
         table.delete(*table.get_children())
 
     if base_file_entry.get() and trans_file_entry.get():
-        idx = 0
-        xml_tree = ET.parse(trans_file_entry.get())
-        xml_root = xml_tree.getroot()
+        base_idx = 0
+        tran_idx = 0
+        try:
+            trans_tree = ET.parse(trans_file_entry.get())
+            trans_root = trans_tree.getroot()
 
-        base_tree = ET.parse(base_file_entry.get())
-        base_root = base_tree.getroot()
-        for elem in xml_root:
-            base_elem = base_root[idx]
-            if elem.get("contentuid") != base_elem.get("contentuid"):
-                messagebox.showerror(
-                    "Error", "Cannot mapping dataset. There are different in two file."
-                )
-                break
+            base_tree = ET.parse(base_file_entry.get())
+            base_root = base_tree.getroot()
+        except IOError:
+            messagebox.showerror(
+                "Error", "File does not exist or could not be opened."
+            )
+            return None
+
+        for elem in base_root:
+            trans_elem = trans_root[tran_idx]
+            trans_text = trans_elem.text
+            if elem.get("contentuid") != trans_elem.get("contentuid"):
+                trans_text = 'NONE'
+            else:
+                tran_idx += 1
             tags = []
-            if elem.text != base_elem.text:
+            if elem.text != trans_elem.text:
                 tags = ["diff"]
+
             table.insert(
                 "",
                 "end",
-                text=idx + 1,
+                text=base_idx + 1,
                 tags=tags,
                 values=(
                     elem.get("contentuid"),
                     elem.get("version"),
+                    trans_text,
                     elem.text,
-                    base_root[idx].text,
                 ),
             )
-            idx += 1
+            base_idx += 1
         config = ConfigParser()
         config["DEFAULT"] = {
             "base_path": base_file_entry.get(),
@@ -153,57 +140,10 @@ def load_data():
         )
 
 
-def init_table():
-    global table, window
-    # Create table frame
-    table_frame = Frame(window)
-    table_frame.pack(fill=BOTH, expand=True)
-
-    # Style
-    style = Style()
-    style.configure(
-        "Treeview",
-        background="#fff",
-        foreground="#333",
-        font=("Calibri", 11),
-        borderwidth=2,
-        relief="groove",
-        rowheight=25,
-    )
-    style.configure("Treeview.Heading", font=("Calibri", 12, "bold")),
-
-    # Create table and scrollbar
-    columns = ("content_id", "version", "content", "origin")
-    table = Treeview(table_frame, columns=columns, height=30)
-    scrollbar = Scrollbar(table_frame, orient=VERTICAL, command=table.yview)
-    table.config(yscrollcommand=scrollbar.set)
-    table.pack(side=LEFT, fill=BOTH, expand=True)
-    scrollbar.pack(side=RIGHT, fill=Y)
-
-    # Handle edit mode
-    table.tag_configure("edited", background="#8DC94D")
-    table.tag_configure("searched", background="#98B3D9")
-    table.tag_configure("diff", background="#EBECFF")
-
-    # Load columns
-    table.heading("#0", text="No.")
-    table.column("#0", stretch=False, width=50)
-    table.heading("content_id", text="Content ID")
-    table.column("content_id", stretch=False, width=250)
-    table.heading("version", text="Version")
-    table.column("version", stretch=False, width=70)
-    table.heading("content", text="Content")
-    table.column("content", width=700)
-    table.heading("origin", text="Origin")
-    table.column("origin", width=300)
-
-    # Binding edit cell
-    table.bind("<Double-1>", on_edit)
-
-
 def select_file(file_entry):
     def wrapper():
         filename = filedialog.askopenfilename(filetypes=[("XML file", ".xml")])
+        file_entry.delete(0, 'end')
         file_entry.insert(0, filename)
 
     return wrapper
@@ -215,6 +155,7 @@ def save_file():
         xml_tree.write(
             f"result/trans_editor_result.xml", encoding="utf-8", xml_declaration=True
         )
+        messagebox.showinfo("Save File", "File saved successfully.")
 
 
 def get_matches(search_input, take_index):
@@ -296,7 +237,7 @@ def init_action_button():
     base_label = Label(file_frame, text="Base:", padx=10, width=5)
     base_label.pack(side=LEFT)
     base_file_entry = Entry(file_frame)
-    base_file_entry.pack(side=LEFT, fill=BOTH, expand=1, padx=(10, 0), pady=10)
+    base_file_entry.pack(side=LEFT, fill=X, expand=1, padx=(10, 0), pady=10)
     # Browse button
     file_button = Button(
         file_frame,
@@ -311,7 +252,7 @@ def init_action_button():
     trans_label = Label(file_frame, text="Translation:", padx=10)
     trans_label.pack(side=LEFT)
     trans_file_entry = Entry(file_frame)
-    trans_file_entry.pack(side=LEFT, fill=BOTH, expand=1, padx=(10, 0), pady=10)
+    trans_file_entry.pack(side=LEFT, fill=X, expand=1, padx=(10, 0), pady=10)
     # Browse button
     file_button = Button(
         file_frame,
@@ -322,6 +263,18 @@ def init_action_button():
     )
     file_button.pack(side=LEFT, padx=(10, 50), pady=10)
 
+    # Sort button
+    sort_button = Button(
+        file_frame, width=10, text="Sort", style="TButton", command=open_sort_dialog
+    )
+    sort_button.pack(side=LEFT, padx=(0, 10), pady=10)
+
+    # Replace button
+    validate_button = Button(
+        file_frame, width=10, text="Replace", style="TButton", command=None
+    )
+    validate_button.pack(side=LEFT, padx=(0, 10), pady=10)
+
     # Load button
     save_button = Button(
         file_frame, width=10, text="Load", style="TButton", command=load_data
@@ -329,10 +282,43 @@ def init_action_button():
     save_button.pack(side=LEFT, padx=(0, 10), pady=10)
 
     # Save button
-    save_button = Button(
-        file_frame, width=10, text="Save", style="TButton", command=save_file
-    )
+    save_button = Button(file_frame, command=save_file, text="Save")
     save_button.pack(side=RIGHT, padx=(0, 20), pady=10)
+
+
+def init_table():
+    global table, window
+    # Create table frame
+    table_frame = Frame(window)
+    table_frame.pack(fill=BOTH, expand=True)
+
+    # Create table and scrollbar
+    columns = ("content_id", "version", "content", "origin")
+    table = Treeview(table_frame, columns=columns, height=20)
+    scrollbar = Scrollbar(table_frame, orient=VERTICAL, command=table.yview)
+    table.config(yscrollcommand=scrollbar.set)
+    table.pack(side=LEFT, fill=BOTH, expand=True)
+    scrollbar.pack(side=RIGHT, fill=Y)
+
+    # Handle edit mode
+    table.tag_configure("edited", background="#8DC94D")
+    table.tag_configure("searched", background="#98B3D9")
+    table.tag_configure("diff", background="#EBECFF")
+
+    # Load columns
+    table.heading("#0", text="No.")
+    table.column("#0", stretch=False, width=50)
+    table.heading("content_id", text="Content ID")
+    table.column("content_id", stretch=False, width=250)
+    table.heading("version", text="Version")
+    table.column("version", stretch=False, width=70)
+    table.heading("content", text="Content")
+    table.column("content", width=700)
+    table.heading("origin", text="Origin")
+    table.column("origin", width=300)
+
+    # Binding edit cell
+    table.bind("<Double-1>", on_edit)
 
 
 def init_search():
@@ -352,16 +338,43 @@ def init_search():
     match_reg_input = Checkbutton(search_frame, text="Regex", variable=match_reg)
     match_reg_input.pack(side=LEFT, pady=(10, 0))
 
-    # Save button
-    save_button = Button(
+    # search button
+    search_button = Button(
         search_frame, width=10, text="Search", style="TButton", command=on_search
     )
-    save_button.pack(side=RIGHT, padx=(10, 20), pady=(10, 0))
+    search_button.pack(side=RIGHT, padx=(10, 20), pady=(10, 0))
+
+
+def init_trans_area():
+    global window, trans_input, base_input
+    edit_frame = Frame(window)
+    edit_frame.pack(fill=BOTH, pady=(0, 5))
+
+    trans_input = ScrolledText(edit_frame, height=5)
+    trans_input.pack(side=LEFT, fill=BOTH, expand=1, pady=(10, 0))
+    trans_input.configure(wrap="word")
+
+    button_frame = Frame(edit_frame)
+    button_frame.pack(side=LEFT, padx=5)
+    search_button = Button(
+        button_frame, width=10, text="Apply", style="TButton", command=on_submit_edit
+    )
+    search_button.pack(side="top")
+
+    revert_button = Button(
+        button_frame, width=10, text="Revert", style="TButton", command=on_revert_edit
+    )
+    revert_button.pack(side="bottom", pady=(10, 0))
+
+    base_input = ScrolledText(edit_frame, height=5)
+    base_input.pack(side=RIGHT, fill=BOTH, expand=1, pady=(10, 0))
+    base_input.configure(wrap="word")
 
 
 def init_layout():
     init_search()
     init_action_button()
+    init_trans_area()
     init_table()
 
 
@@ -371,12 +384,31 @@ def load_config():
     config.read("config.ini")
     data = config["DEFAULT"]
     if data["base_path"]:
+        base_file_entry.delete(0, 'end')
         base_file_entry.insert(0, str(data["base_path"]))
     if data["trans_path"]:
+        trans_file_entry.delete(0, 'end')
         trans_file_entry.insert(0, str(data["trans_path"]))
 
 
+def load_style():
+    style = Style()
+    style.configure('.', font=('Calibri', 10))
+    style.configure('TButton', activebackground="red")
+    style.configure(
+        "Treeview",
+        background="#fff",
+        foreground="#333",
+        font=("Calibri", 11),
+        borderwidth=2,
+        relief="groove",
+        rowheight=25,
+    )
+    style.configure("Treeview.Heading", font=("Calibri", 12, "bold")),
+
+
 if __name__ == "__main__":
+    global window
     # Create Tk window
     window = Tk()
     window.iconbitmap("icon.ico")
@@ -385,5 +417,6 @@ if __name__ == "__main__":
     window.title("Baldur's gate 3 Localization")
     init_layout()
     load_config()
+    load_style()
 
     window.mainloop()
