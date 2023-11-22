@@ -20,15 +20,20 @@ from tkinter import (
 from tkinter.scrolledtext import ScrolledText
 from tkinter.ttk import Checkbutton, Style, Treeview, Button, Entry
 from xml.etree import ElementTree as ET
+from googletrans import Translator
 
 import pyperclip
 
 from sort import open_sort_dialog
 import globals
 
+translator = Translator()
+
 
 def on_submit_edit():
     global table, xml_root, trans_input
+    if not hasattr(trans_input, 'editing_item_iid'):
+        return None
     selected_iid = trans_input.editing_item_iid
     selected_index = trans_input.editing_item_index
 
@@ -43,8 +48,22 @@ def on_submit_edit():
     table.focus(None)
 
 
+def on_trans_edit():
+    global table, xml_root, trans_input
+    if not hasattr(trans_input, 'editing_item_iid'):
+        return None
+    selected_iid = trans_input.editing_item_iid
+    current_values = table.item(selected_iid).get("values")
+
+    result = translator.translate(current_values[3], src='en', dest='vi')
+    trans_input.delete('1.0', END)
+    trans_input.insert(INSERT, result.text)
+
+
 def on_revert_edit():
     global table, xml_root, trans_input
+    if not hasattr(trans_input, 'editing_item_iid'):
+        return None
     selected_iid = trans_input.editing_item_iid
     current_values = table.item(selected_iid).get("values")
 
@@ -365,6 +384,7 @@ def init_trans_area():
 
     button_frame = Frame(edit_frame)
     button_frame.pack(side=LEFT, padx=5)
+
     search_button = Button(
         button_frame, width=10, text="Apply", style="TButton", command=on_submit_edit
     )
@@ -373,10 +393,15 @@ def init_trans_area():
     revert_button = Button(
         button_frame, width=10, text="Revert", style="TButton", command=on_revert_edit
     )
-    revert_button.pack(side="bottom", pady=(10, 0))
+    revert_button.pack(side="top", pady=(5, 0))
+
+    trans_button = Button(
+        button_frame, width=10, text="Translation", style="TButton", command=on_trans_edit
+    )
+    trans_button.pack(side="bottom", pady=(5, 0))
 
     base_input = ScrolledText(edit_frame, height=5)
-    base_input.pack(side=RIGHT, fill=BOTH, expand=1, pady=(10, 0))
+    base_input.pack(side=RIGHT, fill=BOTH, expand=1, pady=(5, 0))
     base_input.configure(wrap="word")
 
 
