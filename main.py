@@ -241,6 +241,7 @@ def on_search_next(event):
 
 def on_search():
     global table, search_input, match_index, previous_match_id
+
     match_index = 0
     previous_match_id = None
     result = get_matches(search_input.get())
@@ -252,6 +253,33 @@ def on_search():
         table.item(result, tags=("searched",))
     else:
         messagebox.showwarning("Search", "No matching data found.")
+
+
+is_show_untran = False
+detached_items = {}
+
+
+class UnTranObj:
+    def __init__(self, data, index):
+        self.data = data
+        self.index = index
+
+
+def on_show_only_un_trans():
+    global is_show_untran, detached_items
+    if is_show_untran == False:
+        is_show_untran = True
+        for item in table.get_children():
+            if table.tag_has("diff", item):
+                table.detach(item)
+                detached_items[item] = table.index(item)
+    else:
+        is_show_untran = False
+        iids = list(detached_items.keys())
+        for iid in iids[::-1]:
+            index = detached_items[iid]
+            table.move(iid, "", index)
+            del detached_items[iid]
 
 
 def init_action_button():
@@ -328,7 +356,7 @@ def init_table():
     table.pack(side=LEFT, fill=BOTH, expand=True)
     scrollbar.pack(side=RIGHT, fill=Y)
 
-    # Handle edit mode
+    # tag config
     table.tag_configure("edited", background="#8DC94D")
     table.tag_configure("searched", background="#98B3D9")
     table.tag_configure("diff", background="#EBECFF")
@@ -367,6 +395,11 @@ def init_search():
     match_reg_input.pack(side=LEFT, pady=(10, 0))
 
     # search button
+    only_untran_button = Button(
+        search_frame, text="Only Un-Translation", style="TButton", command=on_show_only_un_trans
+    )
+    only_untran_button.pack(side=LEFT, padx=(10, 0), pady=(10, 0))
+
     search_button = Button(
         search_frame, width=10, text="Search", style="TButton", command=on_search
     )
