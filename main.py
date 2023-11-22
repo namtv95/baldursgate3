@@ -384,6 +384,18 @@ def init_search():
     search_button.pack(side=RIGHT, padx=(10, 20), pady=(10, 0))
 
 
+def on_scroll(*args):
+    global trans_input, base_input
+    trans_input.vbar.set(*args)
+    base_input.vbar.set(*args)
+
+
+def yview(*args):
+    global trans_input, base_input
+    trans_input.yview(*args)
+    base_input.yview(*args)
+
+
 def init_trans_area():
     global window, trans_input, base_input
     edit_frame = Frame(window)
@@ -392,6 +404,8 @@ def init_trans_area():
     trans_input = ScrolledText(edit_frame, height=5, undo=True)
     trans_input.pack(side=LEFT, fill=BOTH, expand=1, pady=(10, 0))
     trans_input.configure(wrap="word")
+    trans_input['yscrollcommand'] = on_scroll
+    trans_input.vbar.config(command=yview)
 
     button_frame = Frame(edit_frame)
     button_frame.pack(side=LEFT, padx=5)
@@ -414,6 +428,8 @@ def init_trans_area():
     base_input = ScrolledText(edit_frame, height=5)
     base_input.pack(side=RIGHT, fill=BOTH, expand=1, pady=(5, 0))
     base_input.configure(wrap="word")
+    base_input['yscrollcommand'] = on_scroll
+    base_input.vbar.config(command=yview)
 
 
 def init_layout():
