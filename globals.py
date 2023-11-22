@@ -13,5 +13,6 @@ base_input = None
 search_input = None
 match_case = None
 match_reg = None
+match_un_trans = None
 match_index = 0
 previous_match_id = None

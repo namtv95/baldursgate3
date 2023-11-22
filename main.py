@@ -183,9 +183,9 @@ def save_file():
 
 
 def get_matches(search_input):
-    global match_case, match_reg, match_index
+    global match_case, match_reg, match_index, match_un_trans
     search_text = search_input
-    if len(search_input) == 0:
+    if len(search_input) == 0 and match_un_trans.get() == 0:
         return []
 
     if match_case.get() == 0 and match_reg.get() == 0:
@@ -197,7 +197,14 @@ def get_matches(search_input):
         item = data[index]
         values = table.item(item)["values"]
 
-        if match_reg.get() == 0:
+        if match_un_trans.get() == 1:
+            if not table.tag_has('diff', item):
+                if index < length - 1:
+                    match_index = index + 1
+                else:
+                    match_index = 0
+                return item
+        elif match_reg.get() == 0:
             if match_case.get() == 0:
                 values = str(values).lower()
             else:
@@ -351,7 +358,7 @@ def init_table():
 
 
 def init_search():
-    global window, search_input, match_case, match_reg
+    global window, search_input, match_case, match_reg, match_un_trans
     search_frame = Frame(window)
     search_frame.pack(fill=BOTH)
 
@@ -365,7 +372,10 @@ def init_search():
     match_case_input.pack(side=LEFT, padx=(0, 10), pady=(10, 0))
 
     match_reg_input = Checkbutton(search_frame, text="Regex", variable=match_reg)
-    match_reg_input.pack(side=LEFT, pady=(10, 0))
+    match_reg_input.pack(side=LEFT, padx=(0, 10), pady=(10, 0))
+
+    match_un_trans_input = Checkbutton(search_frame, text="Non-translation", variable=match_un_trans)
+    match_un_trans_input.pack(side=LEFT, pady=(10, 0))
 
     # search button
     search_button = Button(
@@ -449,6 +459,7 @@ if __name__ == "__main__":
     window.iconbitmap("icon.ico")
     match_case = IntVar()
     match_reg = IntVar()
+    match_un_trans = IntVar()
     window.title("Baldur's gate 3 Localization")
     init_layout()
     load_config()
