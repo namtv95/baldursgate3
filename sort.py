@@ -1,7 +1,7 @@
 from tkinter import BOTH, LEFT, RIGHT, X, Entry, Frame, Label, Tk, Toplevel, filedialog, messagebox
 from tkinter.ttk import Button
 import xml.etree.ElementTree as ET
-import globals
+from globals import *
 
 dialog = None
 filename = None
@@ -16,7 +16,7 @@ def get_file():
 
 
 def open_sort_dialog():
-    global dialog, filename
+    global dialog, filename, window
 
     # Open dialog
     dialog = Toplevel()
@@ -27,7 +27,7 @@ def open_sort_dialog():
     x = (screen_width/2) - (width/2)
     y = (screen_height/2) - (height/2)
     dialog.geometry("%dx%d+%d+%d" % (width, height, x, y))
-    dialog.transient(globals.window)
+    dialog.transient(window)
     dialog.grab_set()
 
     # Add UI elements
