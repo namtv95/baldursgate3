@@ -25,7 +25,7 @@ from googletrans import Translator
 import pyperclip
 
 from sort import open_sort_dialog
-import globals
+from globals import *
 
 translator = Translator()
 
