@@ -377,9 +377,9 @@ def init_table():
     scrollbar.pack(side=RIGHT, fill=Y)
 
     # tag config
-    table.tag_configure("edited", background="#8DC94D")
+    table.tag_configure("edited", background="#8fce00")
     table.tag_configure("searched", background="#98B3D9")
-    table.tag_configure("diff", background="#EBECFF")
+    table.tag_configure("diff", background="#fcf6e4")
 
     # Load columns
     table.heading("#0", text="No.")
@@ -446,8 +446,8 @@ def init_trans_area():
     trans_input.configure(wrap="word")
     trans_input['yscrollcommand'] = on_scroll
     trans_input.vbar.config(command=yview)
-    trans_input.tag_config("hightlight", foreground="#0054D2", font=("TkTextFont", 10, "bold"))
-    trans_input.tag_config("hightlight2", foreground="#E9500C", font=("TkTextFont", 10, "bold"))
+    trans_input.tag_config("hightlight", foreground="#1a0dab")
+    trans_input.tag_config("hightlight2", foreground="#d94d0e")
 
     button_frame = Frame(edit_frame)
     button_frame.pack(side=LEFT, padx=5)
@@ -472,8 +472,8 @@ def init_trans_area():
     base_input.configure(wrap="word")
     base_input['yscrollcommand'] = on_scroll
     base_input.vbar.config(command=yview)
-    base_input.tag_config("hightlight", foreground="#0054D2", font=("TkTextFont", 10, "bold"))
-    base_input.tag_config("hightlight2", foreground="#E9500C", font=("TkTextFont", 10, "bold"))
+    base_input.tag_config("hightlight", foreground="#1a0dab")
+    base_input.tag_config("hightlight2", foreground="#d94d0e")
 
 
 def init_layout():
