@@ -233,19 +233,20 @@ def get_matches(search_input):
         item = data[index]
         values = table.item(item)["values"]
 
-        if match_un_trans.get() == 1:
-            if not table.tag_has('diff', item):
-                if index < length - 1:
-                    match_index = index + 1
-                else:
-                    match_index = 0
-                return item
-        elif match_reg.get() == 0:
+        if match_reg.get() == 0:
+            content_id = str(values[0])
+            trans = str(values[2])
+            base = str(values[3])
+
+            if match_un_trans.get() == 1 and table.tag_has('diff', item):
+                continue
+
             if match_case.get() == 0:
-                values = str(values).lower()
-            else:
-                values = str(values)
-            if search_text in values:
+                content_id = content_id.lower()
+                trans = trans.lower()
+                base = base.lower()
+
+            if search_text in content_id or search_text in trans or search_text in base:
                 if index < length - 1:
                     match_index = index + 1
                 else:
@@ -256,6 +257,9 @@ def get_matches(search_input):
                 or re.search(search_text, str(values[2]))
                 or re.search(search_text, str(values[3]))
         ):
+            if match_un_trans.get() == 1 and table.tag_has('diff', item):
+                continue
+
             if index < length - 1:
                 match_index = index + 1
             else:
