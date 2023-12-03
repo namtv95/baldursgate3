@@ -162,9 +162,19 @@ def load_data():
             trans_elem = xml_root[idx]
             trans_text = trans_elem.text
             if elem.get("contentuid") != trans_elem.get("contentuid"):
-                xml_root.insert(idx, elem)
-                trans_elem = elem
-                trans_text = elem.text
+                if (elem.get("contentuid") == xml_root[idx + 1].get("contentuid")):
+                    xml_root.remove(trans_elem)
+                    trans_elem = xml_root[idx]
+                    trans_text = trans_elem.text
+                elif (elem.get("contentuid") == xml_root[idx + 2].get("contentuid")):
+                    xml_root.remove(trans_elem)
+                    xml_root.remove(xml_root[idx + 1])
+                    trans_elem = xml_root[idx]
+                    trans_text = trans_elem.text
+                else:
+                    xml_root.insert(idx, elem)
+                    trans_elem = elem
+                    trans_text = elem.text
 
             tags = []
             if elem.text != trans_elem.text:
