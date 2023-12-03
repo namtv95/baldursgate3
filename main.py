@@ -179,6 +179,18 @@ def load_data():
             tags = []
             if elem.text != trans_elem.text:
                 tags = ["diff"]
+            # else:
+            #     if (elem.text is not None
+            #         and "LSTag" not in elem.text
+            #         and (
+            #             "." in elem.text
+            #             or "?" in elem.text
+            #         )
+            #     ):
+            #         trans_text = translator.translate(elem.text, src='en', dest='vi').text
+            #         trans_elem.text = trans_text
+            #         print(elem.text)
+
 
             table.insert(
                 "",
